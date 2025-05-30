@@ -1,0 +1,104 @@
+jenkins:
+  systemMessage: "Welcome to Jenkins — Configured via JCasC!"
+  numExecutors: 4
+  mode: NORMAL
+  scmCheckoutRetryCount: 2
+  quietPeriod: 5
+  disableRememberMe: false
+  markupFormatter:
+    plainText: {}
+
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: "JAVA_HOME"
+            value: "/usr/lib/jvm/java-11-openjdk"
+          - key: "NODE_HOME"
+            value: "/usr/local/node"
+
+unclassified:
+  location:
+    url: "http://jenkins.example.com/"
+  buildDiscarders:
+    configuredBuildDiscarders:
+      - "jobBuildDiscarder"
+  globalBuildDiscarder:
+    strategy:
+      logRotator:
+        daysToKeep: 14
+        numToKeep: 30
+
+tool:
+  installations:
+    - maven:
+        installations:
+          - name: "Maven 3.8"
+            home: "/opt/maven"
+    - nodejs:
+        installations:
+          - name: "NodeJS 18"
+            home: "/usr/local/node"
+    - dockerTool:
+        installations:
+          - name: "Docker"
+            home: "/usr/bin/docker"
+
+security:
+  disableSignup: true
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin123"
+
+plugins:
+  required:
+    - id: workflow-aggregator
+      version: latest
+    - id: job-dsl
+      version: latest
+    - id: configuration-as-code
+      version: latest
+    - id: docker-workflow
+      version: latest
+    - id: nodejs
+      version: latest
+    - id: maven-plugin
+      version: latest
+
+jobs:
+  - script: |
+      pipelineJob('sample-webapp') {
+        definition {
+          cps {
+            script("""
+              pipeline {
+                agent any
+                stages {
+                  stage('Build') {
+                    steps {
+                      sh 'npm install'
+                      sh 'npm run build'
+                    }
+                  }
+                  stage('Test') {
+                    steps {
+                      sh 'npm test'
+                    }
+                  }
+                  stage('Deploy') {
+                    steps {
+                      echo 'Deploying...'
+                    }
+                  }
+                }
+              }
+            """.stripIndent())
+            sandbox()
+          }
+        }
+      }
